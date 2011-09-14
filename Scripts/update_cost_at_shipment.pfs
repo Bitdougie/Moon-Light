@@ -1,0 +1,314 @@
+'    Update price from invoice on receipt of goods and print stickers 
+'    for current stock
+'
+'    Copyright (C) 2011  Douglas Mason
+'
+'    This program is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+'
+'    This program is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+'
+'    You should have received a copy of the GNU General Public License
+'    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'
+'
+'******************************
+' Trigger script event: APShipmentEntryForm.BeforePostReceipt
+'******************************
+'
+'********************************************************************************
+' This function drops through each line of the shipment in accredo and
+' asks the user how many labels should be printed with a default value being the number
+' of items in stock and if the item costs more the standard cost will be updated.
+'********************************************************************************
+Sub Individual(Form1)
+
+  Form1.Line.First
+
+  ProductCode = Form1.Line.ProductCode
+
+  Dim Form2 as Object
+  Dim numberInOrder as number
+  Dim numberInStock as number
+  Dim TotalLabels as number
+
+  Form2 = CreateObject("Accredo.ICProductForm")
+  Form2.Find(ProductCode)
+
+  If Form1.Line.CostPrice > Form2.StandardCost then
+    Form2.Edit
+    Form2.StandardCost = Form1.Line.CostPrice
+    Form2.Save
+
+    numberInStock = Form2.QuantityInStock - Form2.QuantityAllocated
+    numberInOrder = Form1.Line.Quantity
+
+    TotalLabels = InputInteger("In Stock " & (numberInStock + numberInOrder),"PRICE INCREASE LABEL" , (numberInStock + numberInOrder))
+
+    if ProductCode <> "" then
+      Labels = CreateObject("Accredo.ICProductLabels")
+      Labels.ProductFrom = ProductCode
+      Labels.ProductTo = ProductCode
+      Labels.Numberoflabelcopies = TotalLabels
+      Labels.Run
+    end if
+
+  Else
+
+    numberInOrder = Form1.Line.Quantity
+
+    TotalLabels = InputInteger("No in order are " & numberInOrder,"No of Labels",numberInOrder)
+
+    if ProductCode <> "" then
+      Labels = CreateObject("Accredo.ICProductLabels")
+      Labels.ProductFrom = ProductCode
+      Labels.ProductTo = ProductCode
+      Labels.Numberoflabelcopies = TotalLabels
+      Labels.Run
+    end if
+
+  End If
+
+  OldProductLine = Form1.Line.LineNo
+
+  Form1.Line.Next
+
+  Do Until OldProductLine >= Form1.Line.LineNo
+
+    ProductCode = Form1.Line.ProductCode
+
+    Form2.Find(ProductCode)
+
+    If Form1.Line.CostPrice > Form2.StandardCost then
+      Form2.Edit
+      Form2.StandardCost = Form1.Line.CostPrice
+      Form2.Save
+
+      numberInStock = Form2.QuantityInStock - Form2.QuantityAllocated
+      numberInOrder = Form1.Line.Quantity
+
+      TotalLabels = InputInteger("In Stock " & (numberInStock + numberInOrder),"PRICE INCREASE LABEL" , (numberInStock + numberInOrder))
+
+      if ProductCode <> "" then
+        Labels = CreateObject("Accredo.ICProductLabels")
+        Labels.ProductFrom = ProductCode
+        Labels.ProductTo = ProductCode
+        Labels.Numberoflabelcopies = TotalLabels
+        Labels.Run
+      end if
+
+    Else
+
+      numberInOrder = Form1.Line.Quantity
+
+        TotalLabels = InputInteger("No in order are " & numberInOrder,"No of Labels",numberInOrder)
+
+      if ProductCode <> "" then
+        Labels = CreateObject("Accredo.ICProductLabels")
+        Labels.ProductFrom = ProductCode
+        Labels.ProductTo = ProductCode
+        Labels.Numberoflabelcopies = TotalLabels
+        Labels.Run
+      end if
+
+    End If
+
+    OldProductLine = Form1.Line.LineNo
+
+    Form1.Line.Next
+
+
+  Loop
+
+  Form2.Close
+
+  Form2 = Nothing
+  Form1 = Nothing
+
+
+End Sub
+
+'*******************************************************************************************
+' This function goes through the shipment line by line automatically updating the standard 
+' cost to the shipment line cost if the price has gone up and prints the number of stickers 
+' for items we have in stock
+'*******************************************************************************************
+
+Sub Group(Form1)
+
+  Form1.Line.First
+
+  ProductCode = Form1.Line.ProductCode
+
+  Dim Form2 as Object
+  Dim numberInOrder as number
+  Dim numberInStock as number
+
+  Form2 = CreateObject("Accredo.ICProductForm")
+  Form2.Find(ProductCode)
+
+  If Form1.Line.CostPrice > Form2.StandardCost then
+    Form2.Edit
+    Form2.StandardCost = Form1.Line.CostPrice
+    Form2.Save
+
+    numberInStock = Form2.QuantityInStock - Form2.QuantityAllocated
+    numberInOrder = Form1.Line.Quantity
+
+    Labels = CreateObject("Accredo.ICProductLabels")
+    Labels.ProductFrom = ProductCode
+    Labels.ProductTo = ProductCode
+    Labels.Numberoflabelcopies = (numberInStock + numberInOrder)
+    Labels.Run
+
+  Else
+
+    numberInOrder = Form1.Line.Quantity
+
+    Labels = CreateObject("Accredo.ICProductLabels")
+    Labels.ProductFrom = ProductCode
+    Labels.ProductTo = ProductCode
+    Labels.Numberoflabelcopies = numberInOrder
+    Labels.Run
+
+  End If
+
+  OldProductLine = Form1.Line.LineNo
+
+  Form1.Line.Next
+
+  Do Until OldProductLine >= Form1.Line.LineNo
+
+    ProductCode = Form1.Line.ProductCode
+
+    Form2.Find(ProductCode)
+
+    If Form1.Line.CostPrice > Form2.StandardCost then
+      Form2.Edit
+      Form2.StandardCost = Form1.Line.CostPrice
+      Form2.Save
+
+      numberInStock = Form2.QuantityInStock - Form2.QuantityAllocated
+      numberInOrder = Form1.Line.Quantity
+
+      Labels = CreateObject("Accredo.ICProductLabels")
+      Labels.ProductFrom = ProductCode
+      Labels.ProductTo = ProductCode
+      Labels.Numberoflabelcopies = (numberInStock + numberInOrder)
+      Labels.Run
+
+    Else
+
+      numberInOrder = Form1.Line.Quantity
+
+      Labels = CreateObject("Accredo.ICProductLabels")
+      Labels.ProductFrom = ProductCode
+      Labels.ProductTo = ProductCode
+      Labels.Numberoflabelcopies = numberInOrder
+      Labels.Run
+
+    End If
+
+    OldProductLine = Form1.Line.LineNo
+
+    Form1.Line.Next
+
+  Loop
+
+  Form2.Close
+
+  Form2 = Nothing
+  Form1 = Nothing
+
+End Sub
+
+'******************************************************************************
+' Asks the user if they require labels for all of the shiipment items.
+'
+'******************************************************************************
+
+Sub WantLabels(Form1)
+
+    allStock = InputQuery("Do you want to label all available stock?","Label all stock",False,"Yes","No",False)
+
+    if allStock then
+      Group(Form1)
+    else
+      Individual(Form1)
+    End if
+
+End Sub
+
+'******************************************************************************
+' This function updates the standard cost if the shipment price has increased
+' but does not print labels for stock.
+'******************************************************************************
+
+Sub NoLabels(Form1)
+
+  Form1.Line.First
+
+  ProductCode = Form1.Line.ProductCode
+
+  Dim Form2 as Object
+  Form2 = CreateObject("Accredo.ICProductForm")
+  Form2.Find(ProductCode)
+
+  If Form1.Line.CostPrice > Form2.StandardCost then
+    Form2.Edit
+    Form2.StandardCost = Form1.Line.CostPrice
+    Form2.Save
+  end if
+
+  OldProductLine = Form1.Line.LineNo
+
+  Form1.Line.Next
+
+  Do Until OldProductLine >= Form1.Line.LineNo
+
+    ProductCode = Form1.Line.ProductCode
+
+    Form2.Find(ProductCode)
+
+    If Form1.Line.CostPrice > Form2.StandardCost then
+      Form2.Edit
+      Form2.StandardCost = Form1.Line.CostPrice
+      Form2.Save
+    end if
+
+    OldProductLine = Form1.Line.LineNo
+    Form1.Line.Next
+
+  Loop
+
+  Form2.Close
+
+  Form2 = Nothing
+  Form1 = Nothing
+
+End Sub
+
+'************************************************************************
+' Starts the stript off by asking the user if they require labels for
+' the stock being unpacked
+'************************************************************************
+
+Dim Form1 as Object
+Form1 = GetActiveObject
+if IsNull(Form1) or Form1.ClassName <> "APShipmentEntryForm" then Error "Wrong form class for script"
+
+  labels = InputQuery("Do you want labels?","Labels" ,true ,"Yes","No",False)
+
+  if labels then
+    WantLabels(Form1)
+  else
+    NoLabels(Form1)
+  end if
+
+
+Form1 = Nothing
