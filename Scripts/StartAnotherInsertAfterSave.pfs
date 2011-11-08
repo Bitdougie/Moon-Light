@@ -1,0 +1,137 @@
+'    This script flicks to inserting a new item after saving
+'
+'    Copyright (C) 2011  Accredo
+'
+'    This program is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+'
+'    This program is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+'
+'    You should have received a copy of the GNU General Public License
+'    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'
+'
+'************************************
+' Trigger script event: APTransactionForm.AfterSave
+'                       ARTransactionForm.AfterSave
+'************************************
+'
+Dim ActiveForm as Object
+
+ActiveForm = GetTriggerObject
+If IsNull(ActiveForm) Then Error "Wrong form class for script"
+
+Try
+' IN INVOICE
+If ActiveForm.ClassName = "INInvoiceEntryForm" Then
+  If ActiveForm.WasInserting Then
+    ' Only inserting on invoices
+    If ActiveForm.DocumentClass = "I" then
+      ActiveForm.InsertInvoice
+    End If
+  End If
+
+' OE ORDER
+ElseIf ActiveForm.ClassName = "OESalesOrderEntryForm" Then
+  If ActiveForm.WasInserting Then
+    ActiveForm.InsertOrder
+  End If
+
+' PO PURCHASE ORDER
+ElseIf ActiveForm.ClassName = "POPurchaseOrderEntryForm" Then
+  If ActiveForm.WasInserting Then
+    ActiveForm.InsertPurchaseOrder
+  End If
+
+' AP SHIPMENT
+ElseIf ActiveForm.ClassName = "APShipmentEntryForm" Then
+  If ActiveForm.WasInserting Then
+    ActiveForm.InsertShipment
+  End If
+
+' AR TRANSACTION (receipt)
+ElseIf ActiveForm.ClassName = "ARTransactionForm" Then
+  If ActiveForm.TransactionType = "R" Then
+    ActiveForm.InsertReceipt
+  ElseIf ActiveForm.TransactionType = "J" Then
+    ActiveForm.InsertJournal
+  End If
+
+' AP TRANSACTION (invoice/payment/cash purchases)
+ElseIf ActiveForm.ClassName = "APTransactionForm" Then
+  If ActiveForm.TransactionType = "I" Then
+    If ActiveForm.Unallocatable and ActiveForm.TransactionAmount > 0 Then
+      ActiveForm.InsertCashPurchase
+    Else
+      ActiveForm.InsertInvoice
+    End If
+  ElseIf ActiveForm.TransactionType = "P" Then
+    ActiveForm.InsertPayment
+  End If
+
+' CB TRANSACTION (withdrawal/receipt)
+ElseIf ActiveForm.ClassName = "CBEnterTransactionForm" Then
+  If ActiveForm.TransactionType = "C" Then
+    ActiveForm.InsertCheque
+  ElseIf ActiveForm.TransactionType = "D" Then
+    ActiveForm.InsertDeposit
+  End If
+
+' CB Banking Summary
+ElseIf ActiveForm.ClassName = "CBBankingSummaryForm" Then
+  'Start another banking
+  ActiveForm.Edit
+
+' IC TRANSACTION (receipt/adjustment/issue/credit)
+ElseIf ActiveForm.ClassName = "ICEnterTransactionForm" Then
+  If ActiveForm.TransactionType = "R" Then
+    ActiveForm.InsertReceipt
+  ElseIf ActiveForm.TransactionType = "A" Then
+    ActiveForm.InsertAdjustment
+  ElseIf ActiveForm.TransactionType = "I" Then
+    ActiveForm.InsertIssue
+  ElseIf ActiveForm.TransactionType = "C" Then
+    ActiveForm.InsertCredit
+  End If
+
+' IC MANUFACTURE
+ElseIf ActiveForm.ClassName = "ICEnterManufactureForm" Then
+  ActiveForm.Insert
+
+' IC STOCK TRANSFER
+ElseIf ActiveForm.ClassName = "ICStockTransferForm" Then
+  ActiveForm.InsertTransfer
+
+' JC TRANSACTION
+ElseIf ActiveForm.ClassName = "JCEnterTransactionsForm" Then
+  If ActiveForm.TransactionType = "M" Then
+    ActiveForm.InsertMaterial
+  ElseIf ActiveForm.TransactionType = "D" Then
+    ActiveForm.InsertDisbursement
+  ElseIf ActiveForm.TransactionType = "T" Then
+    ActiveForm.InsertTime
+  End If
+
+' JC BATCH TRANSACTIONS or JC TIME SHEET
+ElseIf ActiveForm.ClassName = "JCBatchTransactionEntryForm" Or ActiveForm.ClassName = "JCTimesheetTransactionEntryForm" Then
+  If ActiveForm.BatchClass = "B" then
+    ActiveForm.InsertBatch
+  ElseIf ActiveForm.BatchClass = "T" then
+    ActiveForm.InsertTimesheet
+  ElseIf ActiveForm.BatchClass = "S" then
+    ActiveForm.InsertStanding
+  End If
+ElseIf ActiveForm.ClassName = "CBEnterTransferForm" Then
+  ActiveForm.Insert
+End If
+
+Catch E
+  ActiveForm.Cancel
+End Try
+ActiveForm = Nothing
+

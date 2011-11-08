@@ -1,0 +1,111 @@
+'    Update price from invoice on receipt of goods and print stickers 
+'    for current stock
+'
+'    Copyright (C) 2011  Accredo
+'
+'    This program is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+'
+'    This program is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+'
+'    You should have received a copy of the GNU General Public License
+'    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'
+'*********************************************************
+'*
+'* Purpose: This script populates price list 9 for the special 
+'* discount given to Richmonds which is now silver fern farms
+'* the local meat works
+'*
+'*********************************************************
+
+Function GetPrice(PriceNumber as Number) as Number
+  Dim FunctionForm as Object
+  FunctionForm = GetActiveObject
+
+  FunctionForm.Price.First
+  If PriceNumber > 1 Then
+    For x = 1 to (PriceNumber - 1)
+      FunctionForm.Price.Next
+    Next x
+  End If
+  Return FunctionForm.Price.SellingPrice
+End Function
+
+Sub SetPrice(PriceNumber as Number, PriceValue as Number)
+  Dim FunctionForm as Object
+  FunctionForm = GetActiveObject
+
+  FunctionForm.Price.First
+  If PriceNumber > 1 Then
+    For x = 1 to (PriceNumber - 1)
+      FunctionForm.Price.Next
+    Next x
+  End If
+  FunctionForm.Edit
+  FunctionForm.Price.SellingPrice = PriceValue
+  FunctionForm.Save
+End Sub
+
+Function GetMarkup(PriceNumber as Number) as Number
+  Dim FunctionForm as Object
+  FunctionForm = GetActiveObject
+
+  FunctionForm.Price.First
+  If PriceNumber > 1 Then
+    For x = 1 to (PriceNumber - 1)
+      FunctionForm.Price.Next
+    Next x
+  End If
+  Return FunctionForm.Price.MarkupPercent
+End Function
+
+Sub SetMarkup(PriceNumber as Number,MarkupValue as Number)
+  Dim FunctionForm as Object
+  FunctionForm = GetActiveObject
+
+  FunctionForm.Price.First
+  If PriceNumber > 1 Then
+    For x = 1 to (PriceNumber - 1)
+      FunctionForm.Price.Next
+    Next x
+  End If
+  FunctionForm.Edit
+  FunctionForm.Price.MarkupPercent = MarkupValue
+  FunctionForm.Save
+End Sub
+
+' Used for changing the price in price list 9
+' Filter the selected products before running this script or it will do the entire database!!!
+
+Dim Form1 as Object
+Form1 = CreateObject ("Accredo.ICProductForm")
+'if IsNull(Form1) or Form1.ClassName <> "ICProductForm" then Error "Wrong form class for script"
+
+Do Until Form1.EOF
+  Form1.Edit
+
+  If GetPrice(1) = 0 Then
+    SetPrice(9,0)
+  ElseIf Form1.LatestCost = 0 Then
+    SetPrice(9,(GetPrice(1) / 9) * 8)
+  ElseIf GetMarkup(1) <> 0 Then
+    SetPrice(9,((GetPrice(1) * 0.6666) / 9) * 9)
+    SetMarkup(9,((GetPrice(9) - Form1.LatestCost) / Form1.LatestCost) * 100)
+  ElseIf GetMarkup(2) <> 0 Then
+    SetPrice(9,((GetPrice(2) * 0.6666) / 9) * 9)
+    SetMarkup(9,((GetPrice(9) - Form1.LatestCost) / Form1.LatestCost) * 100)
+  Else
+    SetPrice(9,(GetPrice(1) / 9) * 8)
+  End If
+  Form1.Save
+  Form1.Next
+Loop
+
+Form1.Close
+Form1 = Nothing

@@ -1,0 +1,40 @@
+'    Update price from invoice on receipt of goods and print stickers 
+'    for current stock
+'
+'    Copyright (C) 2011  Douglas Mason
+'
+'    This program is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+'
+'    This program is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+'
+'    You should have received a copy of the GNU General Public License
+'    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'
+
+'*****************************************************
+'* Trigger: Short cut key
+'*****************************************************
+
+
+'*****************************************************
+'*
+'* Purpose: This script automates the setup of a bad
+'* credit alarm on an account.
+'*
+'*****************************************************
+
+Dim Form1 as Object
+Form1 = GetActiveObject
+if IsNull(Form1) or Form1.ClassName <> "ARCustomerForm" then Error "Wrong form class for script"
+Dim Form2 as Object
+Form2 = Form1.Memo.Insert
+Form2.MemoType = "Alarm"
+Form2.TargetUserCode = ""
+Form2.Subject = "Credit Alarm"
+
